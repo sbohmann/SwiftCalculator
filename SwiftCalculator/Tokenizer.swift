@@ -67,6 +67,7 @@ func parseLine(_ line: String, _ lineNumber: Int) throws -> [Token] {
             consume: { c, column in
                 if (c.isWhitespace) {
                     try addToken(column)
+                    tokenParser = startToken
                     return
                 }
                 if !c.isNumber {
@@ -84,9 +85,9 @@ func parseLine(_ line: String, _ lineNumber: Int) throws -> [Token] {
     
     var lastIndex: Int?
     for index in line.indices {
-        let indexAsInt = index.utf16Offset(in: line)
-        try tokenParser.consume(line[index], indexAsInt)
-        lastIndex = indexAsInt + 1
+        let column = index.utf16Offset(in: line) + 1
+        try tokenParser.consume(line[index], column)
+        lastIndex = column + 1
     }
     if let lastIndex = lastIndex {
         try tokenParser.endOfLine(lastIndex)
