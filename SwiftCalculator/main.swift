@@ -4,4 +4,4 @@ let source = try String(contentsOf: URL(fileURLWithPath: "source.calc"), encodin
 
 let tokens = try tokenize(source)
 
-print(tokens)
+print("tokens: \(tokens)")
