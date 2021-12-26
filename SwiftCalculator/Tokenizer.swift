@@ -1,7 +1,33 @@
 import Foundation
 
 struct Token {
-    let value: Int64
+    let text: String
+    let value: TokenValue
+}
+
+enum Operator {
+    case addition
+    case subtraction
+    case multiplication
+    case division
+}
+
+enum BracketType {
+    case paren
+    case square
+    case curly
+}
+
+enum BracketPosition {
+    case opening
+    case closing
+}
+
+enum TokenValue{
+    case integer(value: Int64)
+    case string
+    case op(value: Operator)
+    case bracket(type: BracketType, position: BracketPosition)
 }
 
 struct TokenizerError: Error {
@@ -37,6 +63,20 @@ func parseLine(_ line: String, _ lineNumber: Int) throws -> [Token] {
     var startToken: TokenParser!
     var numberParser: (() -> TokenParser)!
     
+    func parseTokens() throws {
+        tokenParser = startToken
+        
+        var lastIndex: Int?
+        for index in line.indices {
+            let column = index.utf16Offset(in: line) + 1
+            try tokenParser.consume(line[index], column)
+            lastIndex = column + 1
+        }
+        if let lastIndex = lastIndex {
+            try tokenParser.endOfLine(lastIndex)
+        }
+    }
+    
     startToken = TokenParser(
         consume: { c, column in
             if c.isWhitespace {
@@ -60,7 +100,9 @@ func parseLine(_ line: String, _ lineNumber: Int) throws -> [Token] {
             guard let value = Int64(String(stringRepresentation)) else {
                 throw TokenizerError(message: "Illegal number literal [\(stringRepresentation)] at \(lineNumber):\(column)")
             }
-            result.append(Token(value: value))
+            result.append(Token(
+                text: String(stringRepresentation),
+                value: .integer(value: value)))
         }
         
         return TokenParser(
@@ -81,16 +123,6 @@ func parseLine(_ line: String, _ lineNumber: Int) throws -> [Token] {
             })
     }
     
-    tokenParser = startToken
-    
-    var lastIndex: Int?
-    for index in line.indices {
-        let column = index.utf16Offset(in: line) + 1
-        try tokenParser.consume(line[index], column)
-        lastIndex = column + 1
-    }
-    if let lastIndex = lastIndex {
-        try tokenParser.endOfLine(lastIndex)
-    }
+    try parseTokens()
     return result
 }
